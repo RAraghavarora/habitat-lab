@@ -9,7 +9,12 @@ import habitat
 from habitat.core.utils import try_cv2_import
 # from habitat.tasks.nav.shortest_path_follower import ShortestPathFollower
 from habitat.utils.visualizations import maps
+from habitat.config.default import get_agent_config
 from habitat.utils.visualizations.utils import images_to_video
+from habitat.config.default_structured_configs import (
+    ThirdRGBSensorConfig,
+    HeadRGBSensorConfig
+)
 from collections import OrderedDict
 import random
 import magnum as mn
@@ -45,8 +50,15 @@ def draw_top_down_map(info, size):
 def shortest_path_example():
     config_path = 'habitat-lab/habitat/config/benchmark/rearrange/nav_to_obj.yaml'
     config = habitat.get_config(config_path=config_path)
-    # with habitat.config.read_write(config):
-    #     config.TASK.MEASUREMENTS.append("TOP_DOWN_MAP")
+    with habitat.config.read_write(config):
+        agent_config = get_agent_config(sim_config=config.habitat.simulator)
+        agent_config.sim_sensors.update(
+            {
+                "third_rgb_sensor": ThirdRGBSensorConfig(height=512, width=512),
+                "head_rgb_sensor": HeadRGBSensorConfig(height=512, width=512)
+            }
+        )
+        # config.TASK.MEASUREMENTS.append("TOP_DOWN_MAP")
     with SimpleRLEnv(config=config) as env:
         goal_radius = 0.1
         # goal_radius = env.episodes[0].goals[0].radius
@@ -74,7 +86,7 @@ def shortest_path_example():
                 # except:
                 #     pos = [-5.307608604431152, 0.2628794312477112, 17.28000259399414]
                 random_action = {
-                    "action": "BASE_VELOCITY",
+                    "action": "base_velocity",
                     'action_args': {"base_vel": [1, 0]},
                 }
 
@@ -92,26 +104,28 @@ def shortest_path_example():
                 if not done and info['object_to_goal_distance']['0'] == obj_to_gl_dist:
                     # Agent cannot move forward
                     random_action = {
-                        "action": "BASE_VELOCITY",
+                        "action": "base_velocity",
                         'action_args': {"base_vel": [0.5, -0.5]},
                     }
                     observations, reward, done, info = env.step(random_action)
                 obj_to_gl_dist = info['object_to_goal_distance']['0']
                 
                 try:
-                    im = observations["robot_arm_rgb"]
+                    # import pdb; pdb.set_trace()
+                    im1 = observations["robot_head_rgb"]
+                    im2 = observations["robot_third_rgb"]
                 except KeyError:
                     im = observations["rgb"]
 
-                from PIL import Image
-                im2 = Image.fromarray(im)
-                im2 = im2.rotate(180)
+                # from PIL import Image
+                # im2 = Image.fromarray(im)
+                # im2 = im2.rotate(180)
 
                 # im2.save(dirname+'/image_' + str(info['num_steps']) + '.png')
 
-                top_down_map = draw_top_down_map(info, im.shape[0])
-                output_im = np.concatenate((im, top_down_map), axis=1)
-                images.append(np.array(im2))
+                # top_down_map = draw_top_down_map(info, im.shape[0])
+                output_im = np.concatenate((im1, im2), axis=1)
+                images.append(output_im)
             images_to_video(images, dirname, "trajectory")
             print("Episode finished")
 
