@@ -1,6 +1,17 @@
-2023-01-10 16:21:16,858 Initializing dataset RearrangeDataset-v0
-2023-01-10 16:21:16,862 initializing sim RearrangeSim-v0
-[16:21:16:883118]:[Metadata] StageAttributesManager.cpp(86)::registerObjectFinalize : Render asset template handle : data/replica_cad/configs/stages/../../../scene_datasets/igibson/scenes/Beechwood_1_int.glb specified in stage template with handle : data/replica_cad/configs/stages/Stage_v3_sc0_staging.stage_config.json does not correspond to any existing file or primitive render asset.  Aborting.
-[16:21:18:180323]:[Metadata] StageAttributesManager.cpp(86)::registerObjectFinalize : Render asset template handle : Stage_v3_sc0_staging specified in stage template with handle : Stage_v3_sc0_staging does not correspond to any existing file or primitive render asset.  Aborting.
-[16:21:18:227742]:[Core] ManagedContainerBase.h(329)::checkExistsWithMessage : <Stage Template>::getObjectCopyByHandle : Unknown Stage Template managed object handle :  . Aborting
-/var/spool/slurmd/job821519/slurm_script: line 20: 37707 Segmentation fault      (core dumped) python try_gib.py
+2023-01-11 18:43:36,168 Initializing dataset RearrangeDataset-v0
+2023-01-11 18:43:36,172 initializing sim RearrangeSim-v0
+2023-01-11 18:43:39,987 Initializing task NavToObjTask-v0
+Traceback (most recent call last):
+  File "try_gib.py", line 293, in <module>
+    main()
+  File "try_gib.py", line 289, in main
+    shortest_path_example()
+  File "try_gib.py", line 274, in shortest_path_example
+    lseg(im2, info['num_steps'])
+  File "try_gib.py", line 110, in lseg
+    text_feat_list = [clip_text_encoder(p) for p in prompt]
+  File "try_gib.py", line 110, in <listcomp>
+    text_feat_list = [clip_text_encoder(p) for p in prompt]
+  File "/home2/raghav.arora/miniconda3/envs/habitat/lib/python3.8/site-packages/clip/model.py", line 354, in encode_text
+    x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
+RuntimeError: CUDA error: CUBLAS_STATUS_INVALID_VALUE when calling `cublasGemmEx( handle, opa, opb, m, n, k, &falpha, a, CUDA_R_16F, lda, b, CUDA_R_16F, ldb, &fbeta, c, CUDA_R_16F, ldc, CUDA_R_32F, CUBLAS_GEMM_DFALT_TENSOR_OP)`

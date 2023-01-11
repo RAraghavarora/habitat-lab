@@ -29,6 +29,11 @@ from habitat.utils.geometry_utils import quaternion_rotate_vector
 import matplotlib.patches as mpatches
 
 cv2 = try_cv2_import()
+pwd = os.getcwd()
+path = '/home2/raghav.arora/rearrange/lseg-minimal/'
+os.chdir(path)
+from lseg import LSegNet
+os.chdir(pwd)
 os.environ["MAGNUM_LOG"] = "quiet"
 os.environ["HABITAT_SIM_LOG"] = "quiet"
 
@@ -71,14 +76,7 @@ def get_new_pallete(num_colors):
         pallete.append([r, g, b])
     return torch.tensor(pallete).float() / 255.0
 
-def lseg(rgb_im):
-
-    pwd = os.getcwd()
-    path = '/home2/raghav.arora/lseg-minimal/'
-    os.chdir(path)
-    from lseg import LSegNet
-    os.chdir(pwd)
-
+def lseg(rgb_im, name):
     # Initialize the model
     net = LSegNet(
         backbone='clip_vitl16_384',
@@ -89,14 +87,19 @@ def lseg(rgb_im):
         activation='relu',
     )
     # Load pre-trained weights
-    net.load_state_dict(torch.load('/home2/raghav.arora/lseg-minimal/examples/checkpoints/lseg_minimal_e200.ckpt'))
+    net.load_state_dict(torch.load('/home2/raghav.arora/rearrange/lseg-minimal/examples/checkpoints/lseg_minimal_e200.ckpt'))
     net.eval()
     net.cuda()
 
     # Preprocess the text prompt
     clip_text_encoder = net.clip_pretrained.encode_text
     # prompts = ["other"]  # begin with the catch-all "other" class
-    label_classes = ['others', 'carpet', 'couch', 'plant', 'chair']
+    label_classes = [
+        'fridge',
+        'table',
+        'chair',
+        'plant'
+    ]
 
     # Cosine similarity module
     cosine_similarity = torch.nn.CosineSimilarity(dim=1)
@@ -104,7 +107,6 @@ def lseg(rgb_im):
     with torch.no_grad():
 
         # Extract and normalize text features
-        label_classes = ['others', 'carpet', 'couch', 'plant', 'chair']
         prompt = [clip.tokenize(lc).cuda() for lc in label_classes]
         text_feat_list = [clip_text_encoder(p) for p in prompt]
         text_feat_norm_list = [
@@ -112,9 +114,13 @@ def lseg(rgb_im):
         ]
 
         # Load the input image
-        img = Image.fromarray(rgb_im)
+        # img = Image.fromarray(rgb_im)
+        img = rgb_im
         print(f"Original image shape: {img.shape}")
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        try:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        except:
+            import pdb; pdb.set_trace()
         img = cv2.resize(img, (640, 480))
         img = torch.from_numpy(img).float() / 255.0
         img = img[..., :3]  # drop alpha channel, if present
@@ -136,7 +142,6 @@ def lseg(rgb_im):
                 img_feat_norm, text_feat_norm_list[_i].unsqueeze(-1).unsqueeze(-1)
             )
             similarities.append(similarity)
-
         similarities = torch.stack(
             similarities, dim=0
         )  # num_classes, 1, H // 2, W // 2
@@ -146,20 +151,28 @@ def lseg(rgb_im):
         class_scores = class_scores[0].detach()
         print(f"class scores: {class_scores.shape}")
 
-        pallete = get_new_pallete(len(label_classes))
-
         disp_img = torch.zeros(240, 320, 3)
+
+        i = 0
+        while i < len(label_classes):
+            if (class_scores.cpu() == i).sum() == 0:
+                label_classes.pop(i)
+            else:
+                i += 1
+        print(label_classes)
+
+        pallete = get_new_pallete(len(label_classes))
+        
         for _i in range(len(label_classes)):
             disp_img[class_scores == _i] = pallete[_i]
-        rawimg = cv2.imread('../images/136.png')
+        rawimg = rgb_im
         rawimg = cv2.cvtColor(rawimg, cv2.COLOR_BGR2RGB)
         rawimg = cv2.resize(rawimg, (320, 240))
         rawimg = torch.from_numpy(rawimg).float() / 255.0
         rawimg = rawimg[..., :3]  # drop alpha channel, if present
 
         disp_img = 0.5 * disp_img + 0.5 * rawimg
-        cv2.imwrite('try_save', disp_img)
-        import pdb; pdb.set_trace()
+        # cv2.imwrite(str(name) + '.png', disp_img.detach().cpu().numpy())
 
         plt.imshow(disp_img.detach().cpu().numpy())
         plt.legend(
@@ -175,7 +188,7 @@ def lseg(rgb_im):
                 for i in range(len(label_classes))
             ]
         )
-        plt.savefig('please5.png')
+        plt.savefig('examples/images/' + str(name) + '.png')
 
 
 
@@ -248,8 +261,8 @@ def shortest_path_example():
                 
                 try:
                     # import pdb; pdb.set_trace()
-                    im1 = observations["robot_head_rgb"]
-                    im2 = observations["robot_third_rgb"]
+                    im1 = observations["robot_third_rgb"]
+                    im2 = observations["robot_head_rgb"]
                 except KeyError:
                     im = observations["rgb"]
 
@@ -258,15 +271,17 @@ def shortest_path_example():
                 agent_position = env.habitat_env.sim.get_agent(0).state.sensor_states['robot_head_rgb'].position
                 # agent_position = env.habitat_env.sim.get_agent_state().position
                 # agent_position = env._env.sim.get_agent_state().position
+                
+                lseg(im2, info['num_steps'])
+                im2 = cv2.imread('examples/images/' + str(info['num_steps']) + '.png')
+                im3 = Image.fromarray(im2)
+                draw = ImageDraw.Draw(im3)
                 draw.text((0,0), str(agent_position), fill="white")
-
-                lseg(im2)
                 # im2.save(dirname+'/image_' + str(info['num_steps']) + '.png')
 
                 # top_down_map = draw_top_down_map(info, im.shape[0])
-                output_im = np.concatenate((im3, im2), axis=1)
-                images.append(output_im)
-            import pdb; pdb.set_trace()
+                # output_im = np.concatenate((im3, im2), axis=1)
+                images.append(np.array(im3))
             images_to_video(images, dirname, "trajectory")
             print("Episode finished")
 
