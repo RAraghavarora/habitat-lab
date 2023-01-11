@@ -1,0 +1,6 @@
+2023-01-10 16:21:16,858 Initializing dataset RearrangeDataset-v0
+2023-01-10 16:21:16,862 initializing sim RearrangeSim-v0
+[16:21:16:883118]:[Metadata] StageAttributesManager.cpp(86)::registerObjectFinalize : Render asset template handle : data/replica_cad/configs/stages/../../../scene_datasets/igibson/scenes/Beechwood_1_int.glb specified in stage template with handle : data/replica_cad/configs/stages/Stage_v3_sc0_staging.stage_config.json does not correspond to any existing file or primitive render asset.  Aborting.
+[16:21:18:180323]:[Metadata] StageAttributesManager.cpp(86)::registerObjectFinalize : Render asset template handle : Stage_v3_sc0_staging specified in stage template with handle : Stage_v3_sc0_staging does not correspond to any existing file or primitive render asset.  Aborting.
+[16:21:18:227742]:[Core] ManagedContainerBase.h(329)::checkExistsWithMessage : <Stage Template>::getObjectCopyByHandle : Unknown Stage Template managed object handle :  . Aborting
+/var/spool/slurmd/job821519/slurm_script: line 20: 37707 Segmentation fault      (core dumped) python try_gib.py

@@ -48,7 +48,7 @@ def draw_top_down_map(info, size):
 
 
 def shortest_path_example():
-    config_path = 'habitat-lab/habitat/config/benchmark/rearrange/nav_to_obj.yaml'
+    config_path = 'habitat-lab/habitat/config/benchmark/nav/pointnav/pointnav_gibson.yaml'
     config = habitat.get_config(config_path=config_path)
     with habitat.config.read_write(config):
         agent_config = get_agent_config(sim_config=config.habitat.simulator)
@@ -58,6 +58,8 @@ def shortest_path_example():
                 "head_rgb_sensor": HeadRGBSensorConfig(height=512, width=512)
             }
         )
+        config.habitat.dataset.data_path="data/datasets/gibson/val/val.json.gz"
+
         # config.TASK.MEASUREMENTS.append("TOP_DOWN_MAP")
     with SimpleRLEnv(config=config) as env:
         goal_radius = 0.1
@@ -65,12 +67,11 @@ def shortest_path_example():
         if goal_radius is None:
             goal_radius = config.SIMULATOR.FORWARD_STEP_SIZE
 
-        info = {}
         obj_to_gl_dist = 0
         print("Environment creation successful")
         for episode in range(2):
             env.reset()
-            info['num_steps'] = 0
+            num_steps = 0
             dirname = os.path.join(
                 IMAGE_DIR, "shortest_path_example", "%02d" % episode
             )
@@ -86,12 +87,12 @@ def shortest_path_example():
                 # except:
                 #     pos = [-5.307608604431152, 0.2628794312477112, 17.28000259399414]
                 random_action = {
-                    "action": "base_velocity",
-                    'action_args': {"base_vel": [1, 0]},
+                    "action": "turn_right",
+                    'action_args': None,
                 }
-
-                if info['num_steps'] == 500:
-                    random_action['action'] = 'REARRANGE_STOP'
+                if num_steps == 500:
+                    random_action['action'] = 'STOP'
+                num_steps+=1
 
                 # agent_state = env.habitat_env.sim.get_agent_state()
                 # current_position = agent_state.position
@@ -101,31 +102,31 @@ def shortest_path_example():
                 # next_position = current_position + forward_vector
                 
                 observations, reward, done, info = env.step(random_action)
-                if not done and info['object_to_goal_distance']['0'] == obj_to_gl_dist:
-                    # Agent cannot move forward
-                    random_action = {
-                        "action": "base_velocity",
-                        'action_args': {"base_vel": [0.5, -0.5]},
-                    }
-                    observations, reward, done, info = env.step(random_action)
-                obj_to_gl_dist = info['object_to_goal_distance']['0']
+                # if not done and info['object_to_goal_distance']['0'] == obj_to_gl_dist:
+                #     # Agent cannot move forward
+                #     random_action = {
+                #         "action": "turn_left",
+                #         'action_args': None,
+                #     }
+                #     observations, reward, done, info = env.step(random_action)
+                # obj_to_gl_dist = info['object_to_goal_distance']['0']
                 
                 try:
                     # import pdb; pdb.set_trace()
-                    im1 = observations["robot_head_rgb"]
+                    im1 = observations["rgb"]
                     im2 = observations["robot_third_rgb"]
                 except KeyError:
                     im = observations["rgb"]
 
-                # from PIL import Image
-                # im2 = Image.fromarray(im)
-                # im2 = im2.rotate(180)
+                from PIL import Image
+                im2 = Image.fromarray(im1)
+                # im2 = im2.rotate(90)
 
                 # im2.save(dirname+'/image_' + str(info['num_steps']) + '.png')
 
                 # top_down_map = draw_top_down_map(info, im.shape[0])
-                output_im = np.concatenate((im1, im2), axis=1)
-                images.append(output_im)
+                # output_im = np.concatenate((im1, im2), axis=1)
+                images.append(np.array(im2))
             images_to_video(images, dirname, "trajectory")
             print("Episode finished")
 
