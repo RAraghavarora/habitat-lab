@@ -84,7 +84,7 @@ def lseg(rgb_im, name):
         crop_size=480,
         arch_option=0,
         block_depth=0,
-        activation='relu',
+        activation='lrelu',
     )
     # Load pre-trained weights
     net.load_state_dict(torch.load('/home2/raghav.arora/rearrange/lseg-minimal/examples/checkpoints/lseg_minimal_e200.ckpt'))
@@ -95,17 +95,20 @@ def lseg(rgb_im, name):
     clip_text_encoder = net.clip_pretrained.encode_text
     # prompts = ["other"]  # begin with the catch-all "other" class
     label_classes = [
-        'fridge',
+        'other',
+        'plant',
         'table',
         'chair',
-        'plant'
+        'door',
+        'window',
+        'wall',
+        'fruit'
     ]
 
     # Cosine similarity module
     cosine_similarity = torch.nn.CosineSimilarity(dim=1)
 
     with torch.no_grad():
-
         # Extract and normalize text features
         prompt = [clip.tokenize(lc).cuda() for lc in label_classes]
         text_feat_list = [clip_text_encoder(p) for p in prompt]
