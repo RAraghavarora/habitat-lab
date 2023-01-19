@@ -95,14 +95,13 @@ def lseg(rgb_im, name):
     clip_text_encoder = net.clip_pretrained.encode_text
     # prompts = ["other"]  # begin with the catch-all "other" class
     label_classes = [
-        'other',
-        'plant',
         'table',
         'chair',
         'door',
         'window',
         'wall',
-        'fruit'
+        'fruit',
+        'other',
     ]
 
     # Cosine similarity module
@@ -209,6 +208,7 @@ def shortest_path_example():
         config.habitat.dataset.data_path = 'data/datasets/replica_cad/rearrange/v1/val/rep_try.json.gz'
         ob_gl = {'type': 'ObjectToGoalDistance'}
         ob_gl = omegaconf.dictconfig.DictConfig(ob_gl)
+        config.habitat.environment.max_episode_steps = 3000
         if "force_terminate" in config.habitat.task.measurements:
             config.habitat.task.measurements.force_terminate.max_accum_force = -1.0
             config.habitat.task.measurements.force_terminate.max_instant_force = (
@@ -275,16 +275,16 @@ def shortest_path_example():
                 # agent_position = env.habitat_env.sim.get_agent_state().position
                 # agent_position = env._env.sim.get_agent_state().position
                 
-                lseg(im2, info['num_steps'])
-                im2 = cv2.imread('examples/images/' + str(info['num_steps']) + '.png')
+                # lseg(im2, info['num_steps'])
+                # im2 = cv2.imread('examples/images/' + str(info['num_steps']) + '.png')
                 im3 = Image.fromarray(im2)
                 draw = ImageDraw.Draw(im3)
-                draw.text((0,0), str(agent_position), fill="white")
+                draw.text((0,0), str(agent_position), fill="red")
                 # im2.save(dirname+'/image_' + str(info['num_steps']) + '.png')
 
                 # top_down_map = draw_top_down_map(info, im.shape[0])
-                # output_im = np.concatenate((im3, im2), axis=1)
-                images.append(np.array(im3))
+                output_im = np.concatenate((im3, im2), axis=1)
+                images.append(np.array(output_im))
             images_to_video(images, dirname, "trajectory")
             print("Episode finished")
 

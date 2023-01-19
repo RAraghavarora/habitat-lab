@@ -1,1 +1,12 @@
-Fri Jan 13 08:02:03 IST 2023
+==========================================
+SLURM_JOB_ID = 825322
+SLURM_NODELIST = gnode117
+SLURM_JOB_GPUS = 0
+==========================================
+Wed Jan 18 12:00:11 IST 2023
+Environment creation successful
+Agent stepping around inside environment.
+Episode finished
+Agent stepping around inside environment.
+Episode finished
+0
